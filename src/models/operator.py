@@ -109,6 +109,7 @@ class DON_local_update(object):
     model.train()
     logger = {}
     logger["train_loss"] = []
+    logger["total_gradients"] = 0
 
     # set optimizer for local updates
     if self.params["optimizer"] == 'sgd':
@@ -144,8 +145,8 @@ class DON_local_update(object):
       logger["train_loss"].append(avg_epoch_loss)
     
     if sharing_mode == "all":
-      return model.state_dict(), sum(logger["train_loss"]) / len(logger["train_loss"])
+      return model.state_dict(), sum(logger["train_loss"]) / len(logger["train_loss"]), logger["total_gradients"]
     else:
-      return model.branch.state_dict(), model.trunk.state_dict(), sum(logger["train_loss"]) / len(logger["train_loss"])
+      return model.branch.state_dict(), model.trunk.state_dict(), sum(logger["train_loss"]) / len(logger["train_loss"]), logger["total_gradients"]
 
 

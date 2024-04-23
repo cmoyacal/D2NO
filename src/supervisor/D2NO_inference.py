@@ -11,7 +11,7 @@ import torch
 import matplotlib.pyplot as plt
 
 # My imports
-from utils.utils import compute_traj_error
+from utils.utils import compute_l2_error
 
 ##########################
 # function: D2NO inference
@@ -53,7 +53,7 @@ def D2NO_inference(
       G_pred_i = models[client_number]((u_i, y_i))
 
     # compute metrics
-    L2_error = compute_traj_error(G_infer_np[i,...].flatten(), G_pred_i.flatten())
+    L2_error = compute_l2_error(G_infer_np[i,...].flatten(), G_pred_i.flatten())
     metrics["L2_error"].append(L2_error)
 
   # compute error statistics

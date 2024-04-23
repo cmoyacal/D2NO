@@ -58,6 +58,7 @@ def main(args):
     LEARNING_HYPERPARAMS["lr"] = args.lr
     LEARNING_HYPERPARAMS["verbose_local"] = False 
     LEARNING_HYPERPARAMS["different_num_sensors"] = True
+    LEARNING_HYPERPARAMS["local_epochs"] = args.local_epochs
 
     ##########
     # set seed
@@ -102,7 +103,7 @@ def main(args):
     ################################
     # get training data for client 2
     ################################
-    with np.load(args.training_data_client2_fileneme) as data:
+    with np.load(args.training_data_client2_filename) as data:
         u_full_train_client_2 = data["u"]
         u_red_train_client_2 = data["u_red"]
         y_train_client_2 = data["y"]
@@ -116,7 +117,7 @@ def main(args):
     ############################
     # get test data for client 2
     ############################
-    with np.load(args.test_data_client2_fileneme) as data:
+    with np.load(args.test_data_client2_filename) as data:
         u_full_test_client_2 = data["u"]
         u_red_test_client_2 = data["u_red"]
         y_test_client_2 = data["y"]
@@ -152,7 +153,7 @@ def main(args):
     if VERBOSE:
         for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
             print(f"The size of {i+1}th client's dataset is u={u_train[i].shape}, y={y_train[i].shape}, and G={G_train[i].shape}")
-            print(f"\nThe size of {i+1}th client's test dataset is u={u_test[i].shape}, y={y_test[i].shape}, and G={G_test[i].shape}")
+            print(f"The size of {i+1}th client's test dataset is u={u_test[i].shape}, y={y_test[i].shape}, and G={G_test[i].shape}\n")
 		
     ################
     # build the DONS
@@ -171,6 +172,11 @@ def main(args):
             trunk["act_fn_name"] = MODEL_HYPERPARAMS["trunk_act_fn_name"]
             trunk["layer_size"] = [dim] + [MODEL_HYPERPARAMS["trunk_width"]] * MODEL_HYPERPARAMS["trunk_depth"] + [MODEL_HYPERPARAMS["num_basis"]]
         
+        trunk = {}
+        trunk["type"] = MODEL_HYPERPARAMS["trunk_type"]
+        trunk["act_fn_name"] = MODEL_HYPERPARAMS["trunk_act_fn_name"]
+        trunk["layer_size"] = [dim] + [MODEL_HYPERPARAMS["trunk_width"]] * MODEL_HYPERPARAMS["trunk_depth"] + [MODEL_HYPERPARAMS["num_basis"]] 
+
         if not USE_OLD:
             models[i] = classical_DON(branch, trunk, use_bias=False).to(device)
         else:
@@ -180,52 +186,52 @@ def main(args):
         if VERBOSE:
             print(models[i])
 
-        ############################
-        # print the number of params
-        ############################
-        if VERBOSE:
-            for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
-                print(f"Client {i+1} number of branch params = {get_num_params(models[i].branch)} and trunk params = {get_num_params(models[i].trunk)}")
+    ############################
+    # print the number of params
+    ############################
+    if VERBOSE:
+        for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
+            print(f"Client {i+1} number of branch params = {get_num_params(models[i].branch)} and trunk params = {get_num_params(models[i].trunk)}")
 
-        ###############
-        # D2NO training
-        ###############
-        dataset = (u_train_torch, y_train_torch, G_train_torch)
+    ###############
+    # D2NO training
+    ###############
+    dataset = (u_train_torch, y_train_torch, G_train_torch)
 
-        _ = D2NO_train(
-            models, 
-            dataset,
-            DISTRIBUTED_HYPERPARAMS["num_clients"],
-            LEARNING_HYPERPARAMS,
-            client_groups=client_groups,
-            device=device,
-        )
+    _ = D2NO_train(
+        models, 
+        dataset,
+        DISTRIBUTED_HYPERPARAMS["num_clients"],
+        LEARNING_HYPERPARAMS,
+        client_groups=client_groups,
+        device=device,
+    )
 
-        ##############
-        # D2NO testing
-        ##############
-        test_dataset = (u_test_torch, y_test_torch, G_test)
+    ##############
+    # D2NO testing
+    ##############
+    test_dataset = (u_test_torch, y_test_torch, G_test)
         
-        #####################
-        # restore best models
-        #####################
-        for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
-            ckpt_file = "./output/best-model-" + str(i) + ".pt"
-            ckpt = restore(ckpt_file)
-            state_dict = ckpt['state_dict']
-            models[i].load_state_dict(state_dict)
-            models[i].to(device)
-            del ckpt_file, ckpt, state_dict 
+    #####################
+    # restore best models
+    #####################
+    for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
+        ckpt_file = "./output/best-model-" + str(i) + ".pt"
+        ckpt = restore(ckpt_file)
+        state_dict = ckpt['state_dict']
+        models[i].load_state_dict(state_dict)
+        models[i].to(device)
+        del ckpt_file, ckpt, state_dict 
 
 
-        for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
-            _ = D2NO_inference(
-                models,
-                test_dataset,
-                client_number=i,
-                device=device,
-                verbose=VERBOSE,
-            )
+    for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):
+        _ = D2NO_inference(
+            models,
+            test_dataset,
+            client_number=i,
+            device=device,
+            verbose=VERBOSE,
+        )
 
 
 
@@ -242,11 +248,20 @@ if __name__ == "__main__":
     parser.add_argument('--trunk-width', type=int, default=100, help="width of trunk network")
     parser.add_argument('--trunk-depth', type=int, default=3, help="depth of trunk network")
     parser.add_argument('--num-basis', type=int, default=100, help="number of basis")
-
+    parser.add_argument('--trunk-act-fn-name', type=str, default="leaky", help="trunk activation function name")
+    
     # learning
     parser.add_argument('--num-rounds', type=int, default=60, help="number of training rounds")
     parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")	
     parser.add_argument('--local-epochs', type=int, default=1, help="number of local training steps")
+
+    # data 
+    parser.add_argument('--training_data_client1_filename', type=str, default="./data/2d_elliptic/client1_train_num_train_16_subsample_100_input_sub_10.npz", help="training data filename for client 1")
+    parser.add_argument('--test_data_client1_filename', type=str, default="./data/2d_elliptic/client1_test_num_train_4_subsample_100_input_sub_10.npz", help="test data filename for client 1")
+    parser.add_argument('--training_data_client2_filename', type=str, default="./data/2d_elliptic/client2_train_num_train_16_subsample_100_input_sub_10.npz", help="training data filename for client 2")
+    parser.add_argument('--test_data_client2_filename', type=str, default="./data/2d_elliptic/client2_test_num_train_4_subsample_100_input_sub_10.npz", help="test data filename for client 2")
+    parser.add_argument('--use-reduced-input', action="store_true", help="us less sensors")
+
 
     args = parser.parse_args()
     main(args)

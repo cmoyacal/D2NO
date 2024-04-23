@@ -92,24 +92,24 @@ def D2NO_train(
         device=device,
       )
 
-      print(f"current number of total_gradients taken is = {logger["total_gradients"]}")
+      print(f'current number of total_gradients taken is = {logger["total_gradients"]}')
       # local update of weights
       if params["sharing_mode"] == "all":
-        w, loss = local_model.update_weights(
+        w, loss, num_grandients = local_model.update_weights(
           model=copy.deepcopy(models[i]), 
           global_round=k_round+1
           )
         local["weights"].append(copy.deepcopy(w))
 
       else:
-        w_branch, w_trunk, loss = local_model.update_weights(
+        w_branch, w_trunk, loss, num_gradients = local_model.update_weights(
           model=copy.deepcopy(models[i]), 
           global_round=k_round+1, 
           sharing_mode=params["sharing_mode"]
           )
         local["branch_weights"].append(copy.deepcopy(w_branch))
         local["trunk_weights"].append(copy.deepcopy(w_trunk))
-
+      logger["total_gradients"] += num_gradients
       local["losses"].append(copy.deepcopy(loss))
 
     # synchronize selected weights
