@@ -92,7 +92,6 @@ def D2NO_train(
         device=device,
       )
 
-      print(f'current number of total_gradients taken is = {logger["total_gradients"]}')
       # local update of weights
       if params["sharing_mode"] == "all":
         w, loss, num_grandients = local_model.update_weights(
@@ -156,7 +155,8 @@ def D2NO_train(
         'Local losses': local["losses"],
         'Local best losses': logger["best_loss"],
         'Global training loss': loss_avg,
-        'Global best loss:': logger["best_global_loss"]
+        'Global best loss:': logger["best_global_loss"],
+        'number of grads': logger["total_gradients"],
         }
         )
     
