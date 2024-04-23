@@ -173,7 +173,7 @@ def main(args):
             print(models[i])
 
     ############################
-    # train the number of params
+    # print the number of params
     ############################
     if VERBOSE:
         for i in range(DISTRIBUTED_HYPERPARAMS["num_clients"]):

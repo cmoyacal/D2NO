@@ -6,12 +6,88 @@ from typing import Any, Dict, List, Tuple
 
 # Deep learning imports 
 import torch
+import torch.nn as nn
 
 # Plotting imports
 import matplotlib.pyplot as plt
 
 # My imports
+from data.ode_data import ode_system
 from utils.utils import compute_l2_error
+
+#################################
+# function: centralized inference
+#################################
+def centralized_inference(
+    model: nn.Module,
+    system: ode_system,
+    spaces: Dict,
+    client_number: int,
+    num_test: int,
+    num_sensors: int,
+    T: float,
+    device: torch.device=torch.device("cpu"),
+    verbose: bool=True,
+    ) -> Tuple:
+  if verbose:
+    print(f'\n***** Testing centralized model using {num_test} trajectories for space {client_number} *****\n')
+
+  ##############################
+  # allocate memory for L2_error
+  ##############################
+  L2_errors = []
+
+  ####################
+  # generate test data
+  ####################
+  features = spaces[client_number].random(num_test)
+  sensors = np.linspace(0.0, T, num=num_sensors)[:, None]
+  u = spaces[client_number].eval_batch(features, sensors)
+  u_test, y_test, G_test = [], [], []
+  for i in range(num_test):
+    u_i = interpolate.interp1d(
+      np.ravel(sensors), 
+      u[i,...], 
+      kind="cubic", 
+      copy=False, 
+      assume_sorted=True
+      )
+    u_test_i, y_test_i, G_test_i = test_one(system, T, num_sensors, u_i)
+    u_test.append(u_test_i)
+    y_test.append(y_test_i)
+    G_test.append(G_test_i)
+    del u_test_i, y_test_i, G_test_i
+
+  # allocate memory for predictions
+  G_pred = []
+
+  ######
+  # test
+  ######
+  for i in range(len(u_test)):
+    U_test_i = torch.tensor(u_test[i], dtype=torch.float32, device=device)
+    Y_test_i = torch.tensor(y_test[i], dtype=torch.float32, device=device)
+    with torch.no_grad():
+      G_pred_k = model((U_test_i, Y_test_i))
+    G_pred.append(G_pred_k.cpu().detach().numpy())
+
+    # compute metric
+    l2_error = compute_l2_error(G_test[i].flatten(), G_pred[-1].flatten())
+    L2_errors.append(l2_error)
+
+  ##########################
+  # compute error statistics
+  ##########################
+  mean_error = np.mean(L2_errors) * 100
+  std_error = np.std(L2_errors) * 100
+  if verbose:
+    print("The L2-error statistics for centralized model and space {} are given below".format(client_number))
+    print("----------------------------\n")
+    print("L2-err mean   L2-err std\n")
+    print("----------------------------\n")
+    print("{:.3f}   {:.3f}".format(mean_error, std_error))
+
+  return mean_error, std_error, L2_errors
 
 ##########################
 # function: D2NO inference

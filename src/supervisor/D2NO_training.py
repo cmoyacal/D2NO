@@ -7,10 +7,102 @@ from typing import Any, Dict, List, Tuple
 
 # Deep learning imports
 import torch
+import torch.nn as nn
 
 # My imports 
+from data.data_structures import OperatorDataset
 from models.operator import DON_local_update
-from utils.utils import compute_l2_error, unnormalize, save
+from utils.utils import compute_l2_error, MSE, unnormalize, save
+
+
+####################################
+# function: centralized DON training
+####################################
+def centralized_train(
+  model: nn.Module,
+  dataset: OperatorDataset,
+  params: Dict,
+  device: torch.device=None,
+  verbose: bool=True
+  ) -> Dict:
+
+  if verbose:
+    print(f'\n***** Training with Adam Optimizer for {params["num_epochs"]} epochs and using {dataset.len} data samples*****\n')
+
+  ######################
+  # define the optimizer
+  ######################
+  optimizer = torch.optim.Adam(model.parameters(), lr=params["lr"])
+
+  ##################
+  # load the dataset
+  ##################
+  trainloader = torch.utils.data.DataLoader(dataset, batch_size=params["batch_size"], shuffle=True)
+
+  ########################
+  # define logger and pbar
+  ########################
+  logger = {}
+  logger["loss"] = []
+  logger["best_loss"] = np.Inf
+  logger["total_gradients"] = 0
+  pbar = trange(params["num_epochs"])
+
+  ###############
+  # training loop 
+  ###############
+  for epoch in pbar:
+    epoch_loss = 0
+    model.train()
+
+    # batch training
+    for x_batch, y_batch in trainloader:
+      # move data to device
+      u, y = x_batch 
+      x_batch = (u.to(device), y.to(device))
+      y_batch = y_batch.to(device)
+
+      # forward pass
+      y_pred = model(x_batch)
+
+      # compute loss
+      loss = MSE(y_batch, y_pred)
+
+      # compute gradient and backpropagate
+      optimizer.zero_grad()
+      loss.backward()
+
+      # optimize
+      epoch_loss += loss.detach().cpu().numpy().squeeze()
+      optimizer.step()
+
+      # log the number of gradients taken
+      logger["total_gradients"] += sum(p.grad.numel() for p in model.parameters() if p.grad is not None)
+
+    try: 
+      avg_epoch_loss = epoch_loss / len(trainloader)
+    except:
+      print("error: batch size larger than number of training examples")
+
+    # log epoch loss
+    logger["loss"].append(avg_epoch_loss)
+
+    # update best loss
+    if avg_epoch_loss < logger["best_loss"]:
+      logger["best_loss"] = avg_epoch_loss
+      save(model, save_path="./output/centralized-best-model.pt")
+
+    # print
+    pbar.set_postfix({'Train Loss': np.round(avg_epoch_loss,6), 'Best Train Loss': np.round(logger["best_loss"],6), 'Gradients': logger["total_gradients"]})
+
+  print(f"\n******** training summary ********\n")
+  print(f'model best loss ={np.round(logger["best_loss"],6)}')
+  print(f'\nthe number of gradients computed is={logger["total_gradients"]}')
+
+  pbar.close()
+  return logger
+
+
 
 #########################
 # Function: Average weights

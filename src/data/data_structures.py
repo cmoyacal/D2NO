@@ -116,3 +116,18 @@ class Operator_dataset_split_v2(torch.utils.data.Dataset):
     
   def __getitem__(self, item: int) -> List:
     return (self.u[self.client][item,...], self.y[self.client][item,...], self.G[self.client][item,...])
+
+
+#########################
+# class: operator dataset
+#########################
+class OperatorDataset(torch.utils.data.Dataset):
+  def __init__(self, u: torch.Tensor, y: torch.Tensor, G: torch.Tensor) -> None:
+    self.u, self.y, self.G = u, y, G
+    self.len = self.u.shape[0]
+
+  def __len__(self) -> int:
+    return self.len
+  
+  def __getitem__(self, idx: int) -> Tuple[Tuple[torch.Tensor], torch.Tensor]:
+    return (self.u[idx, ...], self.y[idx, ...]), self.G[idx, ...]
