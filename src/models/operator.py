@@ -130,6 +130,9 @@ class DON_local_update(object):
         optimizer.step()
         local_epoch_loss += loss.detach().cpu().numpy().squeeze()
 
+        # log the number of total gedients taken
+        logger["total_gradients"] += sum(p.grad.numel() for p in model.parameters() if p.grad is not None)
+
         if self.params["verbose_local"] and (batch_idx % 50 == 0):
           print('| Global Round : {} | Local Epoch : {} | Loss: {:.3e}'.format(global_round, epoch, loss.item()))
 

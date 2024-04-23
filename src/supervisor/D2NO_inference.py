@@ -2,7 +2,7 @@
 import numpy as np
 
 from scipy import interpolate
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 # Deep learning imports 
 import torch
@@ -13,6 +13,57 @@ import matplotlib.pyplot as plt
 # My imports
 from utils.utils import compute_traj_error
 
+##########################
+# function: D2NO inference
+##########################
+def D2NO_inference(
+    models: Dict,
+    inference_dataset: Tuple,
+    client_number: int=0,
+    device: torch.device=torch.device("cpu"),
+    verbose: bool=True,
+    ) -> Tuple[Dict, Tuple]:
+  
+  ########################
+  # extract inference data
+  ########################
+  u_infer, y_infer, G_infer_np = inference_dataset
+  num_infer = u_infer.shape[0]
+
+  if verbose:
+    print(f'\n***** Testing model {client_number} using {num_infer} samples*****\n')
+  
+  ################
+  # define metrics
+  ################
+  metrics = {}
+  metrics["L2_error"] = []
+
+  ####################
+  # run inference loop
+  ####################
+  for i in range(num_infer):
+    
+    # collect inputs and move to device
+    u_i = u_infer[i,...].to(device)
+    y_i = y_infer[i,...].to(device)
+
+    # predict without computing gradients
+    with torch.no_grad():
+      G_pred_i = models[client_number]((u_i, y_i))
+
+    # compute metrics
+    L2_error = compute_traj_error(G_infer_np[i,...].flatten(), G_pred_i.flatten())
+    metrics["L2_error"].append(L2_error)
+
+  # compute error statistics
+  mean_error = np.mean(metrics["L2_error"]) * 100
+  std_error = np.std(metrics["L2_error"]) * 100
+  if verbose:
+    print("\nThe mean L2-error for client {} is = {:.3f} %".format(client_number, mean_error))
+    print("The standard deviation L2-error for client {} is = {:.3f} %".format(client_number, std_error))
+  
+  return metrics, (mean_error, std_error)
 
 ##############################
 # Function: local inference of models

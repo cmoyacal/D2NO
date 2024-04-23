@@ -49,6 +49,7 @@ def D2NO_train(
   ##############################
   logger = {}
   local= {}
+  logger["total_gradients"] = 0
   logger["train_loss"] = []
   
   logger["best_loss"] = {} 
@@ -89,6 +90,8 @@ def D2NO_train(
         client_number=i,
         device=device,
       )
+
+      print(f"current number of total_gradients taken is = {logger["total_gradients"]}")
       # local update of weights
       if params["sharing_mode"] == "all":
         w, loss = local_model.update_weights(
@@ -140,7 +143,7 @@ def D2NO_train(
     for i in range(num_clients):
       if local["losses"][i] < logger["best_loss"][i]:
         logger["best_loss"][i] = local["losses"][i]
-        save_file = "./best-model-" + str(i) + ".pt"
+        save_file = "./output/best-model-" + str(i) + ".pt"
         save(models[i], save_path=save_file)
 
     if loss_avg < logger["best_global_loss"]:
