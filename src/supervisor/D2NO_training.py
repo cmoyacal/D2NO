@@ -32,7 +32,8 @@ def D2NO_train(
   num_clients: int,
   params: Dict,
   client_groups: Dict,
-  device: torch.device = torch.device("cpu")
+  device: torch.device = torch.device("cpu"),
+  save_name: str="./output/best-model-",
   ) -> Dict:
   ##############################
   # Step 1: unpack the dataset
@@ -143,7 +144,7 @@ def D2NO_train(
     for i in range(num_clients):
       if local["losses"][i] < logger["best_loss"][i]:
         logger["best_loss"][i] = local["losses"][i]
-        save_file = "./output/best-model-" + str(i) + ".pt"
+        save_file = save_name + str(i) + ".pt"
         save(models[i], save_path=save_file)
 
     if loss_avg < logger["best_global_loss"]:
