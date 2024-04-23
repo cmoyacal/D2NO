@@ -27,7 +27,10 @@ def D2NO_inference(
   ########################
   # extract inference data
   ########################
-  u_infer, y_infer, G_infer_np = inference_dataset
+  u_infer_clients, y_infer_clients, G_infer_np_clients = inference_dataset
+  u_infer = u_infer_clients[client_number]
+  y_infer = y_infer_clients[client_number]
+  G_infer_np = G_infer_np_clients[client_number]
   num_infer = u_infer.shape[0]
 
   if verbose:
@@ -53,7 +56,7 @@ def D2NO_inference(
       G_pred_i = models[client_number]((u_i, y_i))
 
     # compute metrics
-    L2_error = compute_l2_error(G_infer_np[i,...].flatten(), G_pred_i.flatten())
+    L2_error = compute_l2_error(G_infer_np[i,...].flatten(), G_pred_i.detach().cpu().numpy().flatten())
     metrics["L2_error"].append(L2_error)
 
   # compute error statistics
@@ -116,7 +119,7 @@ def local_inference(
     G_pred.append(G_pred_i.cpu().detach().numpy())
 
     # compute metrics
-    L2_error = compute_traj_error(G_test[i].flatten(), G_pred[-1].flatten())
+    L2_error = compute_l2_error(G_test[i].flatten(), G_pred[-1].flatten())
     metrics["L2_error"].append(L2_error)
 
     # plot if required

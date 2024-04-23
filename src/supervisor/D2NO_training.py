@@ -152,14 +152,18 @@ def D2NO_train(
     # print updates
     pbar.set_postfix(
       {
-        'Local losses': local["losses"],
+        'Local losses': np.round(local["losses"],6),
         'Local best losses': logger["best_loss"],
-        'Global training loss': loss_avg,
-        'Global best loss:': logger["best_global_loss"],
-        'number of grads': logger["total_gradients"],
+        'Global training loss': np.round(loss_avg,6),
+        'Global best loss:': np.round(logger["best_global_loss"],6),
+        'number of grads': np.round(logger["total_gradients"],6),
         }
         )
     
+  print(f"\n******** training summary ********\n")
+  print(f'model client-1 best loss ={np.round(logger["best_loss"][0],6)}')
+  print(f'model client-2 best loss ={np.round(logger["best_loss"][1],6)}')
+  print(f'\nthe number of gradients computed is={logger["total_gradients"]}')
   return logger
   
 ##############################
