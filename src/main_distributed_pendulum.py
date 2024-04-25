@@ -81,7 +81,7 @@ def main(args):
     MODEL_HYPERPARAMS = {
         "branch_type": "FNN",
         "trunk_type": "FNN",
-        "act_fn_name": "relu",
+        "act_fn_name": "leaky",
         "width": 50,
         "depth": 1,
         "num_basis": 50,

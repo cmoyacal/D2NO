@@ -252,10 +252,11 @@ def D2NO_train(
         }
         )
     
+  total_gradients = np.round(logger["total_gradients"],6)
   print(f"\n******** training summary ********\n")
   print(f'model client-1 best loss ={np.round(logger["best_loss"][0],6)}')
   print(f'model client-2 best loss ={np.round(logger["best_loss"][1],6)}')
-  print(f'\nthe number of gradients computed is={logger["total_gradients"]}')
+  print(f'\nthe number of gradients computed is={total_gradients}')
   return logger
   
 ##############################

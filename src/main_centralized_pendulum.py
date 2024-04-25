@@ -73,7 +73,7 @@ def main(args):
     MODEL_HYPERPARAMS = {
         "branch_type": "FNN",
         "trunk_type": "FNN",
-        "act_fn_name": "relu",
+        "act_fn_name": "leaky",
         "width": 50,
         "depth": 1,
         "num_basis": 50,
@@ -131,7 +131,7 @@ def main(args):
     branch = {}
     branch["type"] = MODEL_HYPERPARAMS["branch_type"]
     branch["act_fn_name"] = MODEL_HYPERPARAMS["act_fn_name"]
-    branch["layer_size"] = [DATA_HYPERPARAMS["num_sensors"][i]] + [MODEL_HYPERPARAMS["width"]] * MODEL_HYPERPARAMS["depth"] + [MODEL_HYPERPARAMS["num_basis"]]
+    branch["layer_size"] = [DATA_HYPERPARAMS["num_sensors"]] + [MODEL_HYPERPARAMS["width"]] * MODEL_HYPERPARAMS["depth"] + [MODEL_HYPERPARAMS["num_basis"]]
 
     trunk = {}
     trunk["type"] = MODEL_HYPERPARAMS["trunk_type"]

@@ -15,6 +15,18 @@ import matplotlib.pyplot as plt
 from data.ode_data import ode_system
 from utils.utils import compute_l2_error
 
+
+##############################
+# Function: test an input u for ODE
+##############################
+def test_u_ode(system: Any, u: np.ndarray, T: int, num_sensors: int, num: int=100) -> List:
+  sensors = np.linspace(0, T, num=num_sensors)[:, None]
+  sensor_vals = u(sensors)
+  y_test = np.linspace(0, T, num=num)[:, None]
+  u_test = np.tile(sensor_vals.T, (num, 1))
+  G_test = system.eval_s_fn(u, y_test)
+  return u_test, y_test, G_test
+
 #################################
 # function: centralized inference
 #################################
@@ -52,7 +64,7 @@ def centralized_inference(
       copy=False, 
       assume_sorted=True
       )
-    u_test_i, y_test_i, G_test_i = test_one(system, T, num_sensors, u_i)
+    u_test_i, y_test_i, G_test_i = test_u_ode(system,u_i, T, num_sensors)
     u_test.append(u_test_i)
     y_test.append(y_test_i)
     G_test.append(G_test_i)
@@ -82,10 +94,10 @@ def centralized_inference(
   std_error = np.std(L2_errors) * 100
   if verbose:
     print("The L2-error statistics for centralized model and space {} are given below".format(client_number))
-    print("----------------------------\n")
-    print("L2-err mean   L2-err std\n")
-    print("----------------------------\n")
-    print("{:.3f}   {:.3f}".format(mean_error, std_error))
+    print("----------------------------")
+    print("L2-err mean   L2-err std")
+    print("----------------------------")
+    print("{:.3f}        {:.3f}".format(mean_error, std_error))
 
   return mean_error, std_error, L2_errors
 
@@ -220,13 +232,3 @@ def local_inference(
   return mean_error, std_error
 
 
-##############################
-# Function: test an input u for ODE
-##############################
-def test_u_ode(system: Any, u: np.ndarray, T: int, num_sensors: int, num: int=100) -> List:
-  sensors = np.linspace(0, T, num=num_sensors)[:, None]
-  sensor_vals = u(sensors)
-  y_test = np.linspace(0, T, num=num)[:, None]
-  u_test = np.tile(sensor_vals.T, (num, 1))
-  G_test = system.eval_s_fn(u, y_test)
-  return u_test, y_test, G_test

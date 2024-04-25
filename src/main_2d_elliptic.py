@@ -239,27 +239,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="D2NO-2d-elliptic")
 
     # model
-    parser.add_argument('--branch-type', type=str, default="modified", help="branch network type")
+    parser.add_argument('--branch-type', type=str, default="FNN", help="branch network type")
     parser.add_argument('--trunk-type', type=str, default="FNN", help="trunk network type")
     parser.add_argument('--branch-act-fn-name', type=str, default="leaky", help="branch activation function name")
     parser.add_argument('--branch-width', type=int, default=100, help="width of branch network")
     parser.add_argument('--branch-depth-client-1', type=int, default=2, help="depth of branch network for client 1")
     parser.add_argument('--branch-depth-client-2', type=int, default=2, help="depth of branch network for client 2")
     parser.add_argument('--trunk-width', type=int, default=100, help="width of trunk network")
-    parser.add_argument('--trunk-depth', type=int, default=3, help="depth of trunk network")
+    parser.add_argument('--trunk-depth', type=int, default=2, help="depth of trunk network")
     parser.add_argument('--num-basis', type=int, default=100, help="number of basis")
     parser.add_argument('--trunk-act-fn-name', type=str, default="leaky", help="trunk activation function name")
     
     # learning
-    parser.add_argument('--num-rounds', type=int, default=60, help="number of training rounds")
-    parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")	
+    parser.add_argument('--num-rounds', type=int, default=1000, help="number of training rounds")
+    parser.add_argument('--lr', type=float, default=1e-4, help="learning rate")	
     parser.add_argument('--local-epochs', type=int, default=1, help="number of local training steps")
 
     # data 
-    parser.add_argument('--training_data_client1_filename', type=str, default="./data/2d_elliptic/client1_train_num_train_16_subsample_100_input_sub_10.npz", help="training data filename for client 1")
-    parser.add_argument('--test_data_client1_filename', type=str, default="./data/2d_elliptic/client1_test_num_train_4_subsample_100_input_sub_10.npz", help="test data filename for client 1")
-    parser.add_argument('--training_data_client2_filename', type=str, default="./data/2d_elliptic/client2_train_num_train_16_subsample_100_input_sub_10.npz", help="training data filename for client 2")
-    parser.add_argument('--test_data_client2_filename', type=str, default="./data/2d_elliptic/client2_test_num_train_4_subsample_100_input_sub_10.npz", help="test data filename for client 2")
+    parser.add_argument('--training-data-client1-filename', type=str, default="./data/2d_elliptic/client1_train_num_train_16_subsample_100_input_sub_10.npz", help="training data filename for client 1")
+    parser.add_argument('--test-data-client1-filename', type=str, default="./data/2d_elliptic/client1_test_num_train_4_subsample_100_input_sub_10.npz", help="test data filename for client 1")
+    parser.add_argument('--training-data-client2-filename', type=str, default="./data/2d_elliptic/client2_train_num_train_16_subsample_100_input_sub_10.npz", help="training data filename for client 2")
+    parser.add_argument('--test-data-client2-filename', type=str, default="./data/2d_elliptic/client2_test_num_train_4_subsample_100_input_sub_10.npz", help="test data filename for client 2")
     parser.add_argument('--use-reduced-input', action="store_true", help="us less sensors")
 
 
